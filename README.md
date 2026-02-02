@@ -9,9 +9,17 @@ Supports desktop and mobile layouts, with smooth animations and drag/swipe inter
 - Vite
 - CSS 
 
-## Demo
+## Demo (Desktop & Mobile)
 
-![Carousel Demo](./public/assets/desktop_carousel.gif)
+### 🖥 **Desktop Demo**
+
+[![Watch Desktop Demo](https://youtu.be/0m3t61NAcE8)](https://youtu.be/0m3t61NAcE8)
+
+
+### 📱 **Mobile Demo**
+
+[![Watch Mobile Demo](https://youtube.com/shorts/sSTbm5x-jKg?feature=share)](https://youtube.com/shorts/sSTbm5x-jKg?feature=share)
+
 
 ## **Installation & Run Locally**
 
