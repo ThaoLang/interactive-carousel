@@ -27,7 +27,7 @@ Supports desktop and mobile layouts, with smooth animations and drag/swipe inter
 
 ```bash
 git clone https://github.com/ThaoLang/interactive-carousel.git
-cd my-carousel
+cd interactive-carousel
 ```
 
 ### **2. Install dependencies**
@@ -113,15 +113,42 @@ Same logic as mouse drag but using:
 
 
 ## **How Infinite Loop is Implemented**
+
 The carousel uses an **extended slides array** by cloning a few slides at both ends of the original list:
 
 ```ts
-const head = slides.slice(-VISIBLE_SLIDES);
-const tail = slides.slice(0, VISIBLE_SLIDES);
+const head = slides.slice(-VISIBLE_SLIDES); // last 3 slides → prepend
+const tail = slides.slice(0, VISIBLE_SLIDES); // first 3 slides → append
 return [...head, ...slides, ...tail];
 ```
 
-When the carousel reaches a cloned slide at either end, it instantly resets to the corresponding real slide **without animation**, creating a seamless loop with no flicker or visible jump.
+The carousel starts at `index = VISIBLE_SLIDES` (the first real slide), so both directions have cloned slides as a buffer.
+
+### Reset logic — both directions
+
+When the carousel reaches a cloned slide at either end, it waits for the slide transition to finish (350ms), then instantly jumps back to the corresponding real slide **without animation**:
+
+```ts
+// Reached end clone → jump back to first real slide
+if (currentIndex === total + VISIBLE_SLIDES) {
+    setTimeout(() => {
+        carouselRef.current!.style.transition = "none";
+        setCurrentIndex(VISIBLE_SLIDES);
+        // ...sync refs
+    }, 350);
+}
+
+// Reached start clone → jump back to last real slide
+if (currentIndex === 0) {
+    setTimeout(() => {
+        carouselRef.current!.style.transition = "none";
+        setCurrentIndex(total);
+        // ...sync refs
+    }, 350);
+}
+```
+
+Because the cloned slides are visually identical to the real ones, the jump is invisible to the user — creating a seamless infinite loop in **both directions** (auto-slide forward and drag backward).
 
 
 ## **Preventing Accidental Clicks While Dragging**
@@ -159,13 +186,21 @@ All images are **preloaded** using `new Image()` to prevent blank slides when sw
 
 ### 2. Seamless looping
 
-When reaching cloned slides, the position is reset **without animation**, maintaining visual continuity.
+When reaching cloned slides at either end, the position is reset **without animation** (`transition: none`), maintaining visual continuity in both directions. After the reset, the translate refs are synced to the new position to keep drag calculations accurate.
 
-### 3. Dragging outside carousel
+### 3. Stale closure prevention during drag
 
-If the user drags and releases outside the viewport, the interaction is safely finalized to avoid inconsistent states.
+During drag, `currentTranslate` and `prevTranslate` are tracked using **refs** (`currentTranslateRef`, `prevTranslateRef`) instead of state. This is because `handleDragEnd` reads these values at the moment the mouse/touch is released — if they were stored in state, the closure inside the event handler would capture an outdated value, causing the drag distance calculation (`movedBy`) to be wrong and the slide transition to fail.
 
-### 4. Responsive behavior
+```ts
+const movedBy = currentTranslateRef.current - prevTranslateRef.current;
+```
+
+### 4. Dragging outside carousel
+
+If the user drags and releases outside the viewport, the interaction is safely finalized via `onMouseLeave` to avoid inconsistent states.
+
+### 5. Responsive behavior
 
 The component adapts to different screen sizes while maintaining:
 
