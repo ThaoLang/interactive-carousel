@@ -2,10 +2,18 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import "./Carousel.css";
 import type { Slide } from "./types";
 
-const CARD_WIDTH = 300;
 const SLIDE_INTERVAL = 3000;
-const MIN_DRAG_DISTANCE = 50;
+const MIN_DRAG_DISTANCE = 40;
 const VISIBLE_SLIDES = 3;
+const BASE_CARD_WIDTH = 300;   
+const BASE_VIEWPORT = 750;
+
+function getCardWidth(): number {
+    const vw = window.innerWidth;
+    if (vw >= BASE_VIEWPORT) return BASE_CARD_WIDTH;
+
+    return vw / 2.5;
+}
 
 interface CarouselProps {
     slides: Slide[];
@@ -27,26 +35,48 @@ export default function Carousel({ slides }: CarouselProps) {
 
     const initialIndex = VISIBLE_SLIDES;
 
+    const [cardWidth, setCardWidth] = useState(getCardWidth);
+    const cardWidthRef = useRef(cardWidth);
+
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
     const [dragDistance, setDragDistance] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
+
+    const isDraggingRef = useRef(false);
+    const startXRef = useRef(0);
+    const currentTranslateRef = useRef(0);
+    const prevTranslateRef = useRef(0);
+
+    const [isDraggingState, setIsDraggingState] = useState(false);
 
     const carouselRef = useRef<HTMLDivElement | null>(null);
     const autoSlideRef = useRef<number | null>(null);
 
-    const currentTranslateRef = useRef(0);
-    const prevTranslateRef = useRef(0);
+    useEffect(() => {
+        const onResize = () => {
+            const next = getCardWidth();
+            setCardWidth(next);
+            cardWidthRef.current = next;
+
+            if (carouselRef.current) {
+                const translate = -currentIndex * next;
+                carouselRef.current.style.transform = `translateX(${translate}px)`;
+                prevTranslateRef.current = translate;
+                currentTranslateRef.current = translate;
+            }
+        };
+
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, [currentIndex]);
 
     const getTranslateX = useCallback(
-        (index: number) => -index * CARD_WIDTH,
-        []
+        (index: number) => -index * cardWidthRef.current,
+        [] 
     );
 
-    // --- AUTO SLIDE ---
     useEffect(() => {
-        if (!isHovered && !isDragging) {
+        if (!isHovered && !isDraggingState) {
             autoSlideRef.current = setInterval(() => {
                 setCurrentIndex((prev) => prev + 1);
             }, SLIDE_INTERVAL);
@@ -55,7 +85,7 @@ export default function Carousel({ slides }: CarouselProps) {
         return () => {
             if (autoSlideRef.current) clearInterval(autoSlideRef.current);
         };
-    }, [isHovered, isDragging]);
+    }, [isHovered, isDraggingState]);
 
     useEffect(() => {
         if (!carouselRef.current) return;
@@ -88,7 +118,7 @@ export default function Carousel({ slides }: CarouselProps) {
     }, [currentIndex, slides.length, getTranslateX]);
 
     useEffect(() => {
-        if (!isDragging && carouselRef.current) {
+        if (!isDraggingState && carouselRef.current) {
             const translate = getTranslateX(currentIndex);
 
             carouselRef.current.style.transition = "transform 0.35s ease-out";
@@ -97,12 +127,13 @@ export default function Carousel({ slides }: CarouselProps) {
             prevTranslateRef.current = translate;
             currentTranslateRef.current = translate;
         }
-    }, [currentIndex, isDragging, getTranslateX]);
+    }, [currentIndex, isDraggingState, getTranslateX]);
 
-    // --- DRAG HANDLERS ---
     const handleDragStart = (x: number) => {
-        setIsDragging(true);
-        setStartX(x);
+        isDraggingRef.current = true;
+        setIsDraggingState(true); 
+
+        startXRef.current = x;
 
         const startTranslate = getTranslateX(currentIndex);
         prevTranslateRef.current = startTranslate;
@@ -116,9 +147,9 @@ export default function Carousel({ slides }: CarouselProps) {
     };
 
     const handleDragMove = (x: number) => {
-        if (!isDragging || !carouselRef.current) return;
+        if (!isDraggingRef.current || !carouselRef.current) return;
 
-        const diff = x - startX;
+        const diff = x - startXRef.current;
         setDragDistance(Math.abs(diff));
         const newTranslate = prevTranslateRef.current + diff;
 
@@ -127,7 +158,10 @@ export default function Carousel({ slides }: CarouselProps) {
     };
 
     const handleDragEnd = () => {
-        setIsDragging(false);
+        if (!isDraggingRef.current) return; 
+
+        isDraggingRef.current = false;
+        setIsDraggingState(false);
 
         const movedBy = currentTranslateRef.current - prevTranslateRef.current;
 
@@ -161,8 +195,8 @@ export default function Carousel({ slides }: CarouselProps) {
             >
                 <div
                     ref={carouselRef}
-                    className={`carousel-track ${isDragging ? "dragging" : ""}`}
-                    style={{ transform: `translateX(${getTranslateX(initialIndex)}px)` }}
+                    className={`carousel-track ${isDraggingState ? "dragging" : ""}`}
+                    style={{ transform: `translateX(${-initialIndex * cardWidth}px)` }}
                     onMouseDown={(e) => {
                         e.preventDefault();
                         handleDragStart(e.clientX);
@@ -170,7 +204,7 @@ export default function Carousel({ slides }: CarouselProps) {
                     onMouseMove={(e) => handleDragMove(e.clientX)}
                     onMouseUp={handleDragEnd}
                     onMouseLeave={() => {
-                        if (isDragging) handleDragEnd();
+                        if (isDraggingRef.current) handleDragEnd();
                     }}
                     onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
                     onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
@@ -180,6 +214,7 @@ export default function Carousel({ slides }: CarouselProps) {
                         <div
                             key={`${slide.id}-${i}`}
                             className="carousel-card"
+                            style={{ minWidth: cardWidth, maxWidth: cardWidth }}
                             onClick={(e) => handleCardClick(e, slide.landing_page)}
                         >
                             <img

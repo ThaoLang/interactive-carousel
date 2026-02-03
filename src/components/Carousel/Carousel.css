@@ -15,6 +15,13 @@
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
 }
 
+@media (max-width: 749px) {
+  .carousel-viewport {
+    height: auto;
+    aspect-ratio: 2.5 / 1; 
+  }
+}
+
 .carousel-track {
   display: flex;
   height: 100%;
@@ -28,8 +35,7 @@
 }
 
 .carousel-card {
-  min-width: 300px;
-  height: 300px;
+  height: 100%;
   position: relative;
   background: #222;
   overflow: hidden;
@@ -47,9 +53,9 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 14px;
+  padding: clamp(6px, 1.88vw, 14px);
   background: rgba(0, 0, 0, 0.75);
   color: white;
   font-weight: 600;
-  font-size: 16px;
+  font-size: clamp(10px, 2.13vw, 16px);
 }
