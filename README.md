@@ -13,12 +13,12 @@ Supports desktop and mobile layouts, with smooth animations and drag/swipe inter
 
 ### 🖥 **Desktop Demo**
 
-[![Watch Desktop Demo](https://youtu.be/0m3t61NAcE8)](https://youtu.be/0m3t61NAcE8)
+https://youtu.be/0m3t61NAcE8
 
 
 ### 📱 **Mobile Demo**
 
-[![Watch Mobile Demo] (https://www.youtube.com/watch?v=_wj0oRuj4OA)](https://www.youtube.com/watch?v=_wj0oRuj4OA)
+https://www.youtube.com/watch?v=_wj0oRuj4OA
 
 
 ## **Installation & Run Locally**
