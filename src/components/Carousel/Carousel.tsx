@@ -36,8 +36,6 @@ export default function Carousel({ slides }: CarouselProps) {
     const carouselRef = useRef<HTMLDivElement | null>(null);
     const autoSlideRef = useRef<number | null>(null);
 
-    // FIX 3: Dùng ref để track currentTranslate và prevTranslate
-    // tránh stale closure trong handleDragEnd
     const currentTranslateRef = useRef(0);
     const prevTranslateRef = useRef(0);
 
@@ -59,14 +57,11 @@ export default function Carousel({ slides }: CarouselProps) {
         };
     }, [isHovered, isDragging]);
 
-    // --- FIX 1 & 2: INFINITE LOOP RESET ---
-    // Chỉ có 1 useEffect, handle cả 2 directions rõ ràng
     useEffect(() => {
         if (!carouselRef.current) return;
 
         const total = slides.length;
 
-        // Đến cuối → jump về đầu
         if (currentIndex === total + VISIBLE_SLIDES) {
             setTimeout(() => {
                 if (!carouselRef.current) return;
@@ -74,13 +69,11 @@ export default function Carousel({ slides }: CarouselProps) {
                 setCurrentIndex(VISIBLE_SLIDES);
                 const newTranslate = getTranslateX(VISIBLE_SLIDES);
                 carouselRef.current.style.transform = `translateX(${newTranslate}px)`;
-                // Sync refs sau khi jump
                 prevTranslateRef.current = newTranslate;
                 currentTranslateRef.current = newTranslate;
             }, 350);
         }
 
-        // Đến đầu → jump về cuối
         if (currentIndex === 0) {
             setTimeout(() => {
                 if (!carouselRef.current) return;
@@ -88,14 +81,12 @@ export default function Carousel({ slides }: CarouselProps) {
                 setCurrentIndex(total);
                 const newTranslate = getTranslateX(total);
                 carouselRef.current.style.transform = `translateX(${newTranslate}px)`;
-                // Sync refs sau khi jump
                 prevTranslateRef.current = newTranslate;
                 currentTranslateRef.current = newTranslate;
             }, 350);
         }
     }, [currentIndex, slides.length, getTranslateX]);
 
-    // --- APPLY TRANSFORM KHI KHÔNG DRAG ---
     useEffect(() => {
         if (!isDragging && carouselRef.current) {
             const translate = getTranslateX(currentIndex);
@@ -103,7 +94,6 @@ export default function Carousel({ slides }: CarouselProps) {
             carouselRef.current.style.transition = "transform 0.35s ease-out";
             carouselRef.current.style.transform = `translateX(${translate}px)`;
 
-            // Sync cả 2 refs
             prevTranslateRef.current = translate;
             currentTranslateRef.current = translate;
         }
@@ -132,7 +122,6 @@ export default function Carousel({ slides }: CarouselProps) {
         setDragDistance(Math.abs(diff));
         const newTranslate = prevTranslateRef.current + diff;
 
-        // Update ref (không phải state) → không cause stale closure
         currentTranslateRef.current = newTranslate;
         carouselRef.current.style.transform = `translateX(${newTranslate}px)`;
     };
@@ -140,7 +129,6 @@ export default function Carousel({ slides }: CarouselProps) {
     const handleDragEnd = () => {
         setIsDragging(false);
 
-        // FIX 3: Đọc từ ref thay vì state → luôn có giá trị mới nhất
         const movedBy = currentTranslateRef.current - prevTranslateRef.current;
 
         if (Math.abs(movedBy) > MIN_DRAG_DISTANCE) {
