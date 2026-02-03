@@ -100,7 +100,7 @@ This project follows a **component-driven architecture** with clear separation b
 3. Translate carousel track accordingly
 4. On release (`onMouseUp`):
 
-   * If dragged more than **50px**, move to next/previous slide
+   * If dragged more than **40px**, move to next/previous slide
    * Otherwise, snap back to original position
 
 ### **Touch Swipe (Mobile)**
