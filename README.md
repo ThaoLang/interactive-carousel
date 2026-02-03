@@ -18,7 +18,7 @@ Supports desktop and mobile layouts, with smooth animations and drag/swipe inter
 
 ### 📱 **Mobile Demo**
 
-[![Watch Mobile Demo]([https://youtube.com/shorts/sSTbm5x-jKg?feature=share](https://youtu.be/_wj0oRuj4OA))]([https://youtube.com/shorts/sSTbm5x-jKg?feature=share](https://youtu.be/_wj0oRuj4OA))
+[![Watch Mobile Demo] (https://www.youtube.com/watch?v=_wj0oRuj4OA)](https://www.youtube.com/watch?v=_wj0oRuj4OA)
 
 
 ## **Installation & Run Locally**
